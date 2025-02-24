@@ -1,0 +1,59 @@
+# Cursor Rules
+
+# Widget Framework Rules
+use_cupertino_widgets = true
+use_material_widgets = false
+
+# iOS Design Pattern Rules
+[ios_design_patterns]
+enforce_ios_patterns = true
+require_large_titles = true
+use_bottom_sheets = true
+enforce_ios_animations = true
+use_ios_gestures = true
+
+# iOS Animation Rules
+[ios_animations]
+default_duration = "0.35s"
+default_curve = "cubic-bezier(0.4, 0.0, 0.2, 1.0)"
+push_animation = "slide_from_right"
+modal_animation = "slide_from_bottom"
+sheet_animation = "slide_and_bounce"
+
+# iOS Interaction Rules
+[ios_interactions]
+use_haptic_feedback = true
+enable_pull_to_refresh = true
+enable_swipe_to_back = true
+enable_edge_swipe = true
+
+# iOS Styling Rules
+[ios_styling]
+use_system_colors = true
+use_system_fonts = true
+use_system_sizes = true
+enforce_safe_areas = true
+use_blur_effects = true
+
+# Research Directory Configuration
+research_directory = "C:\\Users\\roger\\Gauntlet_Projects\\alpha_scribex\\research"
+require_research_consultation = true
+
+# Enforce Research First Policy
+[research_policy]
+check_research_before_decisions = true
+research_path_required = true
+
+# Widget Import Rules
+[import_rules]
+preferred_imports = [
+    "package:flutter/cupertino.dart"
+]
+discouraged_imports = [
+    "package:flutter/material.dart"
+]
+
+# Documentation Requirements
+[documentation]
+require_research_reference = true
+research_citation_format = "Based on research from: {research_directory}/{file}"

@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Achievements collection - Read by all authenticated users, write by admin only
+    match /achievements/{achievementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+        (request.auth.token.admin == true || 
+         request.resource.data.keys().hasAll(['name', 'description', 'points', 'category', 'requirements']));
+    }
+
+    // User achievements collection - Read/write by owner only
+    match /user_achievements/{userAchievementId} {
+      allow read: if isAuthenticated() && 
+        (isOwner(resource.data.userId) || request.auth.token.admin == true);
+      allow write: if isAuthenticated() && 
+        (isOwner(request.resource.data.userId) || request.auth.token.admin == true);
+    }
+
+    // Writing projects collection
+    match /writing_projects/{projectId} {
+      allow read, write: if isAuthenticated() && 
+        (isOwner(resource.data.userId) || request.auth.token.admin == true);
+    }
+
+    // Project versions collection
+    match /project_versions/{versionId} {
+      allow read, write: if isAuthenticated() && 
+        (isOwner(resource.data.userId) || request.auth.token.admin == true);
+    }
+  }
+} 

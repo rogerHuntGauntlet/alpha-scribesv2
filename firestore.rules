@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Writing projects collection - Allow users to read/write their own projects
+    match /writing_projects/{projectId} {
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Project versions collection - Allow users to read/write their project versions
+    match /project_versions/{versionId} {
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // User achievements collection - Allow users to read/write their own achievements
+    match /user_achievements/{userAchievementId} {
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Achievements collection - Allow all authenticated users to read
+    match /achievements/{achievementId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only allow admin to write via backend
+    }
+  }
+} 
