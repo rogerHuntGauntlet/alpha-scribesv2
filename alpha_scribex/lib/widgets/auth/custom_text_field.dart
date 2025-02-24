@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors;
 import '../../theme/app_theme.dart';
 
 class CustomTextField extends StatelessWidget {
@@ -46,12 +45,12 @@ class CustomTextField extends StatelessWidget {
         ],
         Container(
           decoration: BoxDecoration(
-            color: enabled ? AppTheme.surfaceLight : AppTheme.backgroundLight,
+            color: enabled ? AppTheme.surfaceDark : AppTheme.backgroundDark,
             borderRadius: BorderRadius.circular(AppTheme.radiusM),
             border: Border.all(
               color: AppTheme.textSecondary.withOpacity(0.2),
             ),
-            boxShadow: AppTheme.shadowSmall,
+            boxShadow: AppTheme.neonShadow(AppTheme.primaryNeon),
           ),
           child: CupertinoTextField(
             controller: controller,
@@ -59,7 +58,9 @@ class CustomTextField extends StatelessWidget {
             placeholderStyle: AppTheme.bodyMedium.copyWith(
               color: AppTheme.textSecondary.withOpacity(0.5),
             ),
-            style: AppTheme.bodyLarge,
+            style: AppTheme.bodyLarge.copyWith(
+              color: AppTheme.surfaceLight,
+            ),
             obscureText: obscureText,
             keyboardType: keyboardType,
             suffix: suffixIcon,
@@ -72,7 +73,7 @@ class CustomTextField extends StatelessWidget {
               vertical: AppTheme.spacingM,
             ),
             decoration: BoxDecoration(
-              color: Colors.transparent,
+              color: CupertinoColors.transparent,
               borderRadius: BorderRadius.circular(AppTheme.radiusM),
             ),
           ),
@@ -89,7 +90,7 @@ class CustomTextField extends StatelessWidget {
                       child: Text(
                         error,
                         style: AppTheme.bodyMedium.copyWith(
-                          color: AppTheme.accentCoral,
+                          color: AppTheme.primaryPink,
                         ),
                       ),
                     )

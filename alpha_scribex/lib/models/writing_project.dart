@@ -5,6 +5,7 @@ class WritingProject {
   final String userId;
   final String title;
   final String description;
+  final String type;
   final DateTime createdAt;
   final DateTime updatedAt;
   final int wordCount;
@@ -16,6 +17,7 @@ class WritingProject {
     required this.userId,
     required this.title,
     required this.description,
+    required this.type,
     required this.createdAt,
     required this.updatedAt,
     required this.wordCount,
@@ -29,6 +31,7 @@ class WritingProject {
       userId: map['userId'] ?? '',
       title: map['title'] ?? '',
       description: map['description'] ?? '',
+      type: map['type'] ?? '',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       wordCount: map['wordCount'] ?? 0,
@@ -43,6 +46,7 @@ class WritingProject {
       'userId': userId,
       'title': title,
       'description': description,
+      'type': type,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'wordCount': wordCount,
@@ -56,6 +60,7 @@ class WritingProject {
     String? userId,
     String? title,
     String? description,
+    String? type,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? wordCount,
@@ -67,6 +72,7 @@ class WritingProject {
       userId: userId ?? this.userId,
       title: title ?? this.title,
       description: description ?? this.description,
+      type: type ?? this.type,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       wordCount: wordCount ?? this.wordCount,

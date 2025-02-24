@@ -5,6 +5,8 @@ import '../services/initialization_service.dart';
 import 'project_list_screen.dart';
 import 'achievements_screen.dart';
 import 'home_screen.dart';
+import 'exercises_screen.dart';
+import 'profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -15,7 +17,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late InitializationService _initializationService;
-  final _tabController = CupertinoTabController(initialIndex: 0);
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -28,7 +30,6 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -38,65 +39,43 @@ class _MainScreenState extends State<MainScreen> {
 
   void switchToTab(int index) {
     setState(() {
-      _tabController.index = index;
+      _currentIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoTabScaffold(
-      controller: _tabController,
-      tabBar: CupertinoTabBar(
-        activeColor: CupertinoTheme.of(context).primaryColor,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.home),
-            activeIcon: Icon(CupertinoIcons.house_fill),
-            label: 'Home',
+    return CupertinoPageScaffold(
+      child: IndexedStack(
+        index: _currentIndex,
+        children: [
+          HomeScreen(
+            key: const PageStorageKey('home'),
+            onSwitchTab: switchToTab,
+            currentIndex: _currentIndex,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.doc_text),
-            activeIcon: Icon(CupertinoIcons.doc_text_fill),
-            label: 'Projects',
+          ProjectListScreen(
+            key: const PageStorageKey('projects'),
+            onSwitchTab: switchToTab,
+            currentIndex: _currentIndex,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.star),
-            activeIcon: Icon(CupertinoIcons.star_fill),
-            label: 'Achievements',
+          ExercisesScreen(
+            key: const PageStorageKey('exercises'),
+            onSwitchTab: switchToTab,
+            currentIndex: _currentIndex,
+          ),
+          AchievementsScreen(
+            key: const PageStorageKey('achievements'),
+            onSwitchTab: switchToTab,
+            currentIndex: _currentIndex,
+          ),
+          ProfileScreen(
+            key: const PageStorageKey('profile'),
+            onSwitchTab: switchToTab,
+            currentIndex: _currentIndex,
           ),
         ],
       ),
-      tabBuilder: (context, index) {
-        return CupertinoTabView(
-          builder: (context) {
-            switch (index) {
-              case 0:
-                return HomeScreen(
-                  key: const PageStorageKey('home'),
-                  onSwitchTab: switchToTab,
-                );
-              case 1:
-                return const ProjectListScreen(
-                  key: PageStorageKey('projects'),
-                );
-              case 2:
-                return const AchievementsScreen(
-                  key: PageStorageKey('achievements'),
-                );
-              default:
-                return HomeScreen(
-                  key: const PageStorageKey('home'),
-                  onSwitchTab: switchToTab,
-                );
-            }
-          },
-          defaultTitle: index == 0 
-              ? 'Home' 
-              : index == 1 
-                  ? 'Projects' 
-                  : 'Achievements',
-        );
-      },
     );
   }
 }

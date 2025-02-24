@@ -20,7 +20,7 @@ class WritingEditorScreen extends StatefulWidget {
   State<WritingEditorScreen> createState() => _WritingEditorScreenState();
 }
 
-class _WritingEditorScreenState extends State<WritingEditorScreen> {
+class _WritingEditorScreenState extends State<WritingEditorScreen> with SingleTickerProviderStateMixin {
   final WritingProjectService _projectService = WritingProjectService();
   final TextEditingController _textController = TextEditingController();
   bool _isLoading = true;
@@ -32,10 +32,14 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
   List<Map<String, dynamic>> _analysisData = [];
   String _progressText = '';
   String _nextSteps = '';
+  
+  // Animation controller for the background grid
+  AnimationController? _gridAnimationController;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimationController();
     _loadContent();
     _loadAchievementLevel();
     _loadLastAnalysis();
@@ -43,10 +47,18 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
     _autoSaveTimer = Timer.periodic(const Duration(seconds: 5), (_) => _saveContent());
   }
 
+  void _initializeAnimationController() {
+    _gridAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+  }
+
   @override
   void dispose() {
     _textController.dispose();
     _autoSaveTimer?.cancel();
+    _gridAnimationController?.dispose();
     super.dispose();
   }
 
@@ -264,6 +276,7 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
 
   Widget _buildAnalysisItem(String text, int score, bool isPerfect, String feedback, String suggestions) {
     final isExpanded = _expandedItems[text] ?? false;
+    final color = isPerfect ? AppTheme.primaryNeon : AppTheme.primaryTeal;
     
     return GestureDetector(
       onTap: () {
@@ -272,15 +285,16 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
         });
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(12),
+        duration: AppTheme.durationFast,
+        margin: EdgeInsets.only(bottom: AppTheme.spacingM),
+        padding: EdgeInsets.all(AppTheme.spacingM),
         decoration: BoxDecoration(
-          color: CupertinoColors.systemGrey6,
-          borderRadius: BorderRadius.circular(8),
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(AppTheme.radiusM),
           border: Border.all(
-            color: isPerfect ? CupertinoColors.activeGreen : CupertinoColors.systemGrey4,
+            color: color.withOpacity(0.3),
           ),
+          boxShadow: AppTheme.neonShadow(color),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,45 +306,48 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
                   height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _getScoreColor(score),
+                    color: _getScoreColor(score).withOpacity(0.2),
+                    border: Border.all(
+                      color: _getScoreColor(score),
+                      width: 2,
+                    ),
+                    boxShadow: AppTheme.neonShadow(_getScoreColor(score)),
                   ),
                   child: Center(
                     child: Text(
                       score.toString(),
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 16,
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: _getScoreColor(score),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: AppTheme.spacingM),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         text.length > 50 ? '${text.substring(0, 50)}...' : text,
-                        style: const TextStyle(
-                          fontSize: 15,
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: CupertinoColors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: AppTheme.spacingXS),
                       Row(
                         children: [
                           Icon(
                             isPerfect ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.info_circle_fill,
-                            color: isPerfect ? CupertinoColors.activeGreen : CupertinoColors.systemGrey,
+                            color: color,
                             size: 16,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: AppTheme.spacingXS),
                           Text(
                             isPerfect ? 'Perfect!' : 'Needs improvement',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isPerfect ? CupertinoColors.activeGreen : CupertinoColors.systemGrey,
+                            style: AppTheme.bodySmall.copyWith(
+                              color: color,
                             ),
                           ),
                         ],
@@ -339,57 +356,57 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
                   ),
                 ),
                 AnimatedRotation(
-                  duration: const Duration(milliseconds: 200),
+                  duration: AppTheme.durationFast,
                   turns: isExpanded ? 0.5 : 0,
-                  child: const Icon(
+                  child: Icon(
                     CupertinoIcons.chevron_down,
-                    color: CupertinoColors.systemGrey,
+                    color: color,
                     size: 20,
                   ),
                 ),
               ],
             ),
             AnimatedCrossFade(
-              duration: const Duration(milliseconds: 200),
+              duration: AppTheme.durationFast,
               crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
               firstChild: const SizedBox.shrink(),
               secondChild: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppTheme.spacingM),
                   Container(
                     height: 1,
-                    color: CupertinoColors.separator,
+                    color: color.withOpacity(0.3),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppTheme.spacingM),
                   Text(
                     'Feedback',
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: AppTheme.bodySmall.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: CupertinoColors.systemGrey,
+                      color: color,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: AppTheme.spacingXS),
                   Text(
                     feedback,
-                    style: const TextStyle(fontSize: 14),
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: CupertinoColors.white.withOpacity(0.9),
+                    ),
                   ),
                   if (suggestions.isNotEmpty) ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: AppTheme.spacingM),
                     Text(
                       'Suggestions',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: AppTheme.bodySmall.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: CupertinoColors.systemGrey,
+                        color: color,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: AppTheme.spacingXS),
                     Text(
                       suggestions,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: CupertinoColors.white.withOpacity(0.9),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -404,10 +421,10 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
   }
 
   Color _getScoreColor(int score) {
-    if (score >= 9) return CupertinoColors.activeGreen;
-    if (score >= 7) return CupertinoColors.activeBlue;
-    if (score >= 5) return CupertinoColors.systemOrange;
-    return CupertinoColors.systemRed;
+    if (score >= 9) return AppTheme.primaryNeon;
+    if (score >= 7) return AppTheme.primaryTeal;
+    if (score >= 5) return AppTheme.primaryLavender;
+    return AppTheme.primaryPink;
   }
 
   String _getNextLevelRequirement() {
@@ -428,133 +445,418 @@ class _WritingEditorScreenState extends State<WritingEditorScreen> {
     }
   }
 
+  Widget _buildGridBackground() {
+    if (_gridAnimationController == null) return const SizedBox.shrink();
+    
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: _gridAnimationController!,
+        builder: (context, child) {
+          return CustomPaint(
+            painter: CyberpunkGridPainter(
+              animation: _gridAnimationController!.value,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const CupertinoPageScaffold(
+      return CupertinoPageScaffold(
+        backgroundColor: AppTheme.backgroundDark,
         navigationBar: CupertinoNavigationBar(
-          middle: Text('Loading...'),
+          middle: const Text('Loading...'),
+          backgroundColor: AppTheme.surfaceDark.withOpacity(0.9),
+          border: null,
         ),
-        child: Center(
-          child: CupertinoActivityIndicator(),
+        child: Stack(
+          children: [
+            _buildGridBackground(),
+            const Center(
+              child: CupertinoActivityIndicator(
+                radius: 16,
+                color: AppTheme.primaryNeon,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return CupertinoPageScaffold(
+      backgroundColor: AppTheme.backgroundDark,
       navigationBar: CupertinoNavigationBar(
-        middle: Text(widget.project.title),
+        middle: Text(
+          widget.project.title,
+          style: AppTheme.bodyLarge.copyWith(
+            color: AppTheme.primaryNeon,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.surfaceDark.withOpacity(0.9),
+        border: null,
       ),
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Achievement Level
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemGrey6,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        children: [
+          _buildGridBackground(),
+          
+          SafeArea(
+            child: ListView(
+              padding: EdgeInsets.all(AppTheme.spacingM),
+              children: [
+                // Achievement Level Card with improved design
+                Container(
+                  padding: EdgeInsets.all(AppTheme.spacingL),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceDark.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                    border: Border.all(
+                      color: AppTheme.primaryNeon.withOpacity(0.3),
+                      width: 2,
+                    ),
+                    boxShadow: AppTheme.neonShadow(AppTheme.primaryNeon),
+                  ),
+                  child: Column(
                     children: [
-                      Icon(
-                        CupertinoIcons.pencil_circle_fill,
-                        color: _achievementLevel.startsWith('Level 0') 
-                            ? CupertinoColors.systemGrey
-                            : CupertinoColors.activeBlue,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(AppTheme.spacingM),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryNeon.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                              border: Border.all(
+                                color: AppTheme.primaryNeon.withOpacity(0.5),
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              CupertinoIcons.pencil_circle_fill,
+                              color: _achievementLevel.startsWith('Level 0')
+                                  ? AppTheme.primaryTeal
+                                  : AppTheme.primaryNeon,
+                              size: 28,
+                            ),
+                          ),
+                          SizedBox(width: AppTheme.spacingM),
+                          Text(
+                            _achievementLevel,
+                            style: AppTheme.headingMedium.copyWith(
+                              color: _achievementLevel.startsWith('Level 0')
+                                  ? AppTheme.primaryTeal
+                                  : AppTheme.primaryNeon,
+                              shadows: AppTheme.neonShadow(_achievementLevel.startsWith('Level 0')
+                                  ? AppTheme.primaryTeal
+                                  : AppTheme.primaryNeon),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _achievementLevel,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: _achievementLevel.startsWith('Level 0') 
-                              ? CupertinoColors.systemGrey
-                              : CupertinoColors.activeBlue,
+                      SizedBox(height: AppTheme.spacingM),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacingL,
+                          vertical: AppTheme.spacingM,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryNeon.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                          border: Border.all(
+                            color: AppTheme.primaryNeon.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          _getNextLevelRequirement(),
+                          textAlign: TextAlign.center,
+                          style: AppTheme.bodyMedium.copyWith(
+                            color: AppTheme.primaryNeon,
+                            shadows: AppTheme.neonShadow(AppTheme.primaryNeon),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _getNextLevelRequirement(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.systemGrey,
+                ),
+                
+                SizedBox(height: AppTheme.spacingL),
+                
+                // Writing Area with improved design
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceDark.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                    border: Border.all(
+                      color: AppTheme.primaryTeal.withOpacity(0.3),
+                      width: 2,
+                    ),
+                    boxShadow: AppTheme.neonShadow(AppTheme.primaryTeal),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(AppTheme.spacingL),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(AppTheme.spacingS),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryTeal.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                border: Border.all(
+                                  color: AppTheme.primaryTeal.withOpacity(0.5),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                CupertinoIcons.text_justify,
+                                color: AppTheme.primaryTeal,
+                                size: 20,
+                              ),
+                            ),
+                            SizedBox(width: AppTheme.spacingM),
+                            Text(
+                              'Your Story',
+                              style: AppTheme.bodyLarge.copyWith(
+                                color: AppTheme.primaryTeal,
+                                fontWeight: FontWeight.bold,
+                                shadows: AppTheme.neonShadow(AppTheme.primaryTeal),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.backgroundDark.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                        ),
+                        child: CupertinoTextField(
+                          controller: _textController,
+                          placeholder: 'Start writing your story...',
+                          minLines: 12,
+                          maxLines: null,
+                          padding: EdgeInsets.all(AppTheme.spacingL),
+                          decoration: null,
+                          style: AppTheme.bodyLarge.copyWith(
+                            color: CupertinoColors.white,
+                            height: 1.6,
+                          ),
+                          placeholderStyle: AppTheme.bodyLarge.copyWith(
+                            color: AppTheme.primaryTeal.withOpacity(0.4),
+                            height: 1.6,
+                          ),
+                          cursorColor: AppTheme.primaryTeal,
+                          cursorWidth: 2,
+                          cursorHeight: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                SizedBox(height: AppTheme.spacingL),
+                
+                // Analyze Button with improved design
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                    boxShadow: AppTheme.neonShadow(AppTheme.primaryNeon),
+                  ),
+                  child: CupertinoButton(
+                    padding: EdgeInsets.symmetric(vertical: AppTheme.spacingL),
+                    color: AppTheme.primaryNeon.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isAnalyzing) ...[
+                          const CupertinoActivityIndicator(color: CupertinoColors.white),
+                          SizedBox(width: AppTheme.spacingM),
+                        ],
+                        Text(
+                          _isAnalyzing ? 'Analyzing...' : 'Analyze Writing',
+                          style: AppTheme.headingMedium.copyWith(
+                            color: AppTheme.primaryNeon,
+                            shadows: AppTheme.neonShadow(AppTheme.primaryNeon),
+                          ),
+                        ),
+                        if (!_isAnalyzing) ...[
+                          SizedBox(width: AppTheme.spacingM),
+                          Icon(
+                            CupertinoIcons.arrow_right_circle_fill,
+                            color: AppTheme.primaryNeon,
+                            size: 28,
+                          ),
+                        ],
+                      ],
+                    ),
+                    onPressed: _isAnalyzing ? null : _analyzeAndShowResults,
+                  ),
+                ),
+
+                if (_analysisData.isNotEmpty) ...[
+                  SizedBox(height: AppTheme.spacingXL),
+                  
+                  // Analysis Results with improved design
+                  Container(
+                    padding: EdgeInsets.all(AppTheme.spacingL),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceDark.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                      border: Border.all(
+                        color: AppTheme.primaryLavender.withOpacity(0.3),
+                        width: 2,
+                      ),
+                      boxShadow: AppTheme.neonShadow(AppTheme.primaryLavender),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(AppTheme.spacingM),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryLavender.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                border: Border.all(
+                                  color: AppTheme.primaryLavender.withOpacity(0.5),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                CupertinoIcons.chart_bar_fill,
+                                color: AppTheme.primaryLavender,
+                                size: 24,
+                              ),
+                            ),
+                            SizedBox(width: AppTheme.spacingM),
+                            Text(
+                              'Analysis Results',
+                              style: AppTheme.headingMedium.copyWith(
+                                color: AppTheme.primaryLavender,
+                                shadows: AppTheme.neonShadow(AppTheme.primaryLavender),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: AppTheme.spacingL),
+                        Text(
+                          _progressText,
+                          style: AppTheme.bodyLarge.copyWith(
+                            color: AppTheme.primaryNeon,
+                            shadows: AppTheme.neonShadow(AppTheme.primaryNeon),
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spacingM),
+                        Container(
+                          padding: EdgeInsets.all(AppTheme.spacingL),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryTeal.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusL),
+                            border: Border.all(
+                              color: AppTheme.primaryTeal.withOpacity(0.3),
+                              width: 2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(AppTheme.spacingS),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryTeal.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                                  border: Border.all(
+                                    color: AppTheme.primaryTeal.withOpacity(0.5),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Icon(
+                                  CupertinoIcons.lightbulb_fill,
+                                  color: AppTheme.primaryTeal,
+                                  size: 20,
+                                ),
+                              ),
+                              SizedBox(width: AppTheme.spacingM),
+                              Expanded(
+                                child: Text(
+                                  'Next Steps: $_nextSteps',
+                                  style: AppTheme.bodyMedium.copyWith(
+                                    color: AppTheme.primaryTeal,
+                                    shadows: AppTheme.neonShadow(AppTheme.primaryTeal),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  SizedBox(height: AppTheme.spacingM),
+                  ..._analysisData.map((item) => _buildAnalysisItem(
+                    item['sentence']?.toString() ?? item['paragraph']?.toString() ?? item['page']?.toString() ?? '',
+                    (item['score'] as num?)?.toInt() ?? 0,
+                    item['isPerfect'] as bool? ?? false,
+                    item['feedback']?.toString() ?? '',
+                    item['suggestions']?.toString() ?? '',
+                  )).toList(),
                 ],
-              ),
+              ],
             ),
-            
-            const SizedBox(height: 16),
-            
-            // Text Input
-            CupertinoTextField(
-              controller: _textController,
-              placeholder: 'Start writing your story...',
-              minLines: 5,
-              maxLines: 10,
-              padding: const EdgeInsets.all(12),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Submit Button
-            CupertinoButton.filled(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_isAnalyzing) ...[
-                    const CupertinoActivityIndicator(color: CupertinoColors.white),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    _isAnalyzing ? 'Analyzing...' : 'Submit',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-              onPressed: _isAnalyzing ? null : _analyzeAndShowResults,
-            ),
-
-            if (_analysisData.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Text(
-                _progressText,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: CupertinoColors.activeBlue,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Next Steps: $_nextSteps',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: CupertinoColors.systemGrey,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ..._analysisData.map((item) => _buildAnalysisItem(
-                item['sentence']?.toString() ?? item['paragraph']?.toString() ?? item['page']?.toString() ?? '',
-                (item['score'] as num?)?.toInt() ?? 0,
-                item['isPerfect'] as bool? ?? false,
-                item['feedback']?.toString() ?? '',
-                item['suggestions']?.toString() ?? '',
-              )).toList(),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+// Add CyberpunkGridPainter class
+class CyberpunkGridPainter extends CustomPainter {
+  final double animation;
+
+  CyberpunkGridPainter({required this.animation});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    const spacing = 30.0;
+    final verticalLines = (size.width / spacing).ceil();
+    final horizontalLines = (size.height / spacing).ceil();
+
+    // Draw vertical lines
+    for (var i = 0; i < verticalLines; i++) {
+      final x = i * spacing;
+      final startY = size.height * animation;
+      paint.color = AppTheme.primaryNeon.withOpacity(0.1 * (1 - i / verticalLines));
+      canvas.drawLine(
+        Offset(x, startY),
+        Offset(x, size.height),
+        paint,
+      );
+    }
+
+    // Draw horizontal lines
+    for (var i = 0; i < horizontalLines; i++) {
+      final y = i * spacing;
+      final startX = size.width * (1 - animation);
+      paint.color = AppTheme.primaryTeal.withOpacity(0.1 * (1 - i / horizontalLines));
+      canvas.drawLine(
+        Offset(startX, y),
+        Offset(size.width, y),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CyberpunkGridPainter oldDelegate) => true;
 } 

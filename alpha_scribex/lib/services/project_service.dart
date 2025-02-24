@@ -11,6 +11,7 @@ class ProjectService {
   Future<WritingProject> createProject({
     required String title,
     required String description,
+    required String type,
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
@@ -20,6 +21,7 @@ class ProjectService {
       'userId': user.uid,
       'title': title,
       'description': description,
+      'type': type,
       'createdAt': Timestamp.fromDate(now),
       'updatedAt': Timestamp.fromDate(now),
       'wordCount': 0,
@@ -33,6 +35,7 @@ class ProjectService {
       userId: user.uid,
       title: title,
       description: description,
+      type: type,
       createdAt: now,
       updatedAt: now,
       wordCount: 0,
